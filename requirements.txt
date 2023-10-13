@@ -1,3 +1,4 @@
+annotated-types==0.6.0
 anyio==4.0.0
 argon2-cffi==23.1.0
 argon2-cffi-bindings==21.2.0
@@ -73,10 +74,13 @@ psutil==5.9.5
 ptyprocess==0.7.0
 pure-eval==0.2.2
 pycparser==2.21
+pydantic==2.4.2
+pydantic_core==2.10.1
 Pygments==2.16.1
 pyparsing==3.1.1
 python-dateutil==2.8.2
 python-json-logger==2.0.7
+python-osc==1.8.3
 PyYAML==6.0.1
 pyzmq==25.1.1
 qtconsole==5.4.4
