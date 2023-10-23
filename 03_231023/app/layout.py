@@ -1,34 +1,50 @@
 import dash_mantine_components as dmc
+from dash import dcc
 from dash.development.base_component import Component
 
 
-def dashboard_layout() -> Component:
+def dashboard_layout(update_interval: int) -> Component:
     return dmc.Container([
-        dmc.Title("Модель биржевого стакана", mb=32),
+        dmc.Title("Depth of Market", mb=32),
         dmc.Grid([
             dmc.Col(id="dom", span=2),
             dmc.Col([
-                dmc.Col(id="order_lock"),
-                dmc.Slider(
-                    value=20,
-                    step=2,
-                    min=10,
-                    max=30,
-                    id="slider-input",
-                    marks=[
-                        {"value": i, "label": i}
-                        for i in range(10, 31, 2)
-                    ]
-                )
-            ], span=8
+                dmc.Grid(
+                    [
+                        dmc.Col(
+                            dmc.Slider(
+
+                                value=20,
+                                step=2,
+                                min=10,
+                                max=30,
+                                id="slider-input",
+                                marks=[
+                                    {"value": i, "label": i}
+                                    for i in range(10, 31, 2)
+                                ],
+                                mb=32,
+                                mr=32
+                            ),
+                            span=5
+                        ),
+                        dmc.Col(
+                            dmc.Button(children="Play", id="play-pause", n_clicks=0),
+                            span=1
+                        )
+                    ],
+                ),
+                dmc.Col(id="order-lock"),
+            ], span=9
             ),
         ], justify="space-between"
         ),
+        dcc.Interval(id="update", interval=update_interval, n_intervals=0)
     ], maw="90%"
     )
 
 
-def styles_to_dom(best_ask: float, best_bid: float, page_size: int) -> dict:
+def dom_table(best_ask: float, best_bid: float, page_size: int) -> dict:
     extra_filter = {
         "if": {
             "filter_query": f'{{price}} = {best_ask}',
@@ -85,4 +101,17 @@ def styles_to_dom(best_ask: float, best_bid: float, page_size: int) -> dict:
                 "backgroundColor": "#ff6b6b"
             }
         ]
+    }
+
+
+def order_lock_table() -> dict:
+    return {
+        "columns": [
+            {"name": "price", "id": "price"},
+            {"name": "type", "id": "type"},
+            {"name": "action", "id": "action"},
+            {"name": "amount", "id": "amount"},
+            {"name": "time", "id": "time"},
+        ],
+        "page_size": 12
     }

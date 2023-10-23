@@ -1,5 +1,3 @@
-from enum import Enum
-
 import dash
 import dash_mantine_components as dmc
 import pandas as pd
@@ -16,54 +14,54 @@ class DomDashboard(dom.Dom):
     def __init__(self, depth=20, size=20):
         super().__init__(depth, size)
         self.app = self.create_dash_app()
+        self.order = None
 
-    def _get_dom_data_table(self, dom_df: pd.DataFrame, page_size: int) -> DataTable:
+    def _get_dom_data_table(self, dom_df: pd.DataFrame, page_size: int, order: dom.Dom.Order):
         ask_len = len(self.ask)
         rest = page_size // 2
 
         slice_start = max(ask_len - rest, 0)
         slice_end = min(ask_len + rest, len(dom_df))
 
-        return DataTable(
+        return dmc.Text(str(order or "")), DataTable(
             data=dom_df.iloc[slice_start:slice_end].to_dict("records"),
-            **layout.styles_to_dom(self.best_ask, self.best_bid, page_size)
+            **layout.dom_table(self.best_ask, self.best_bid, page_size)
         )
 
-    def _get_order_lock_data_table(self) -> DataTable:
+    def _get_order_lock_data_table(self):
         return DataTable(
-            data=pd.DataFrame(
-                [
-                    {key: value if not isinstance(value, Enum) else value.value for key, value in order.items()}
-                    for order in self.order_lock
-                ]
-            ).to_dict("records"),
-            columns=[
-                {"name": "price", "id": "price"},
-                {"name": "type", "id": "type"},
-                {"name": "action", "id": "action"},
-                {"name": "amount", "id": "amount"},
-            ],
-            page_size=12
+            data=self.order_lock.to_dict("records"),
+            **layout.order_lock_table()
         )
 
     def create_dash_app(self):
         app = dash.Dash(__name__, external_stylesheets=[dmc.theme.DEFAULT_COLORS])
 
-        app.layout = layout.dashboard_layout()
+        app.layout = layout.dashboard_layout(self.UPDATE_INTERVAL)
 
         @app.callback(
             [
                 Output("dom", "children"),
-                Output("order_lock", "children")
+                Output("order-lock", "children"),
+                Output("play-pause", "children")
             ],
-            Input("slider-input", "value")
+            [
+                Input("slider-input", "value"),
+                Input("play-pause", "n_clicks"),
+                Input("update", "n_intervals"),
+            ],
         )
-        def update_dom(page_size):
-            self.process_order()
+        def update_dom(page_size, n_clicks, n_intervals):
+            played = n_clicks % 2
+            if not played:
+                order = self.order
+            else:
+                order = self.process_order()
             dom_df = self.common_df()
             return [
-                self._get_dom_data_table(dom_df, page_size),
-                self._get_order_lock_data_table()
+                self._get_dom_data_table(dom_df, page_size, order),
+                self._get_order_lock_data_table(),
+                "Play" if not played else "Stop"
             ]
 
         return app

@@ -1,3 +1,4 @@
+from datetime import datetime
 from enum import Enum
 from typing import Callable
 
@@ -33,6 +34,16 @@ class Dom:
 
             super().__init__(price=_price, amount=_amount, **kwargs)
 
+        def to_dict(self) -> dict:
+            return {
+                key: value if not isinstance(value, Enum) else value.value
+                for key, value in self.model_dump().items()
+            }
+
+        def __str__(self):
+            return (f"{self.action.value.upper()} {self.type.value.upper()} order "
+                    f"with price = {self.price}, amount = {self.amount}")
+
     def __init__(
             self,
             depth: int = 20,
@@ -41,7 +52,7 @@ class Dom:
         self.depth = depth
         self.bid = pd.DataFrame(columns=["price", "orders"])
         self.ask = pd.DataFrame(columns=["price", "orders"])
-        self.order_lock = list()
+        self.order_lock = pd.DataFrame(columns=["price", "type", "action", "amount", "time"])
 
         self._generate_bid(size)
         self._generate_ask(size)
@@ -115,6 +126,16 @@ class Dom:
             )
             self.ask.at[self.ask.index[-1], "orders"].append(order)
 
+    def _update_order_lock(self, order: Order) -> None:
+        self.order_lock = pd.concat(
+            [
+                pd.DataFrame([order.to_dict() | {"time": datetime.now()}]),
+                self.order_lock.dropna(axis=1, how="all"),
+            ],
+            ignore_index=True
+        )
+        # self.order_lock =
+
     def _generate_bid(self, size: int) -> None:
         for _ in range(size):
             order = self.Order(type=self.Order.Type.limit, action=self.Order.Action.buy)
@@ -160,7 +181,7 @@ class Dom:
         deal_amount = min(deal_order.amount, order.amount)
         deal_order.amount -= deal_amount
 
-        self.order_lock.append(order.model_dump())
+        self._update_order_lock(order)
         order.amount -= deal_amount
 
         if not deal_order.amount:
@@ -212,11 +233,14 @@ class Dom:
         common_df = common_df[["bid", "price", "ask"]]
         return common_df.sort_values(by="price", ascending=False)
 
-    def process_order(self) -> pd.DataFrame:
+    def process_order(self) -> Order:
         order = self._random_order()
+        initial_amount = order.amount
+
         if order.type == self.Order.Type.limit:
             self._execute_limit(order)
         else:
             self._execute_market(order)
 
-        return self.common_df()
+        order.amount = initial_amount
+        return order
