@@ -1,3 +1,4 @@
+from collections import deque
 from datetime import datetime
 from enum import Enum
 from typing import Callable
@@ -53,6 +54,7 @@ class Dom:
         self.bid = pd.DataFrame(columns=["price", "orders"])
         self.ask = pd.DataFrame(columns=["price", "orders"])
         self.order_lock = pd.DataFrame(columns=["price", "type", "action", "amount", "time"])
+        self.bba_trace = deque(maxlen=20)
 
         self._generate_bid(size)
         self._generate_ask(size)
@@ -129,12 +131,11 @@ class Dom:
     def _update_order_lock(self, order: Order) -> None:
         self.order_lock = pd.concat(
             [
-                pd.DataFrame([order.to_dict() | {"time": datetime.now()}]),
+                pd.DataFrame([order.to_dict() | {"time": (time := datetime.now())}]),
                 self.order_lock.dropna(axis=1, how="all"),
             ],
             ignore_index=True
         )
-        # self.order_lock =
 
     def _generate_bid(self, size: int) -> None:
         for _ in range(size):
@@ -236,6 +237,8 @@ class Dom:
     def process_order(self) -> Order:
         order = self._random_order()
         initial_amount = order.amount
+
+        self.bba_trace.append({"time": datetime.now().timestamp(), "bid": self.best_bid, "ask": self.best_ask})
 
         if order.type == self.Order.Type.limit:
             self._execute_limit(order)

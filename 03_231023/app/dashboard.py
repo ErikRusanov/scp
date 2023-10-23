@@ -1,6 +1,7 @@
 import dash
 import dash_mantine_components as dmc
 import pandas as pd
+import plotly.graph_objs as go
 from dash import Output, Input
 from dash.dash_table import DataTable
 
@@ -34,6 +35,34 @@ class DomDashboard(dom.Dom):
             **layout.order_lock_table()
         )
 
+    def _get_best_prices_trace(self):
+        bba_trace = list(self.bba_trace)
+        timestamps = [bba.get("time") for bba in bba_trace]
+        bid = [bba.get("bid") for bba in bba_trace]
+        ask = [bba.get("ask") for bba in bba_trace]
+
+        data_bid = go.Scatter(
+            x=timestamps,
+            y=bid,
+            name="Best bid",
+            mode='lines+markers'
+        )
+        data_ask = go.Scatter(
+            x=timestamps,
+            y=ask,
+            name="Best ask",
+            mode='lines+markers'
+        )
+        x_range = [min(timestamps), max(timestamps)] if timestamps else [0, 1]
+        y_range = [min(bid) - 5, max(ask) + 5] if timestamps else [0, 1]
+        return {
+            "data": [data_bid, data_ask],
+            "layout": go.Layout(
+                xaxis=dict(range=x_range),
+                yaxis=dict(range=y_range)
+            )
+        }
+
     def create_dash_app(self):
         app = dash.Dash(__name__, external_stylesheets=[dmc.theme.DEFAULT_COLORS])
 
@@ -66,7 +95,8 @@ class DomDashboard(dom.Dom):
             [
                 Output("dom", "children"),
                 Output("order-lock", "children"),
-                Output("update", "interval")
+                Output("update", "interval"),
+                Output("bid-ask-graph", "figure")
             ],
             [
                 Input("dom-page-size", "value"),
@@ -77,10 +107,12 @@ class DomDashboard(dom.Dom):
         def update_dom(page_size, n_intervals, intensity):
             order = self.process_order() if self.update else None
             dom_df = self.common_df()
+
             return [
                 self._get_dom_data_table(dom_df, page_size, order),
                 self._get_order_lock_data_table(),
-                (-25 * intensity) // 3 + 1500
+                (-25 * intensity) // 3 + 1500,
+                self._get_best_prices_trace(),
             ]
 
         return app

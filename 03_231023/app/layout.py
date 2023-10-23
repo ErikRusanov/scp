@@ -27,14 +27,14 @@ def dashboard_layout(update_interval: int) -> Component:
                         ),
                         dmc.Col(
                             dmc.Slider(
-                                value=60,
-                                min=40,
-                                max=80,
+                                value=90,
+                                min=10,
+                                max=170,
                                 id="intensity",
                                 marks=[
                                     {"value": i, "label": i}
-                                    for i in [40, 60, 80]
-                                ]
+                                    for i in [10, 90, 170]
+                                ],
                             ),
                             span=4
                         ),
@@ -46,7 +46,14 @@ def dashboard_layout(update_interval: int) -> Component:
                     mb=32,
                     justify="space-between"
                 ),
-                dmc.Col(id="order-lock"),
+                dmc.Grid(
+                    [
+                        dmc.Col(
+                            dcc.Graph(id="bid-ask-graph", animate=True),
+                        ),
+                        dmc.Col(id="order-lock"),
+                    ]
+                ),
             ], span=9
             ),
         ], justify="space-between"
