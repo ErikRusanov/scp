@@ -13,33 +13,45 @@ def dashboard_layout(update_interval: int) -> Component:
                     [
                         dmc.Col(
                             dmc.Slider(
-
                                 value=20,
                                 step=2,
                                 min=10,
                                 max=30,
-                                id="slider-input",
+                                id="dom-page-size",
                                 marks=[
                                     {"value": i, "label": i}
                                     for i in range(10, 31, 2)
                                 ],
-                                mb=32,
-                                mr=32
                             ),
                             span=5
+                        ),
+                        dmc.Col(
+                            dmc.Slider(
+                                value=60,
+                                min=40,
+                                max=80,
+                                id="intensity",
+                                marks=[
+                                    {"value": i, "label": i}
+                                    for i in [40, 60, 80]
+                                ]
+                            ),
+                            span=4
                         ),
                         dmc.Col(
                             dmc.Button(children="Play", id="play-pause", n_clicks=0),
                             span=1
                         )
                     ],
+                    mb=32,
+                    justify="space-between"
                 ),
                 dmc.Col(id="order-lock"),
             ], span=9
             ),
         ], justify="space-between"
         ),
-        dcc.Interval(id="update", interval=update_interval, n_intervals=0)
+        dcc.Interval(id="update", interval=update_interval, n_intervals=0, disabled=False)
     ], maw="90%"
     )
 

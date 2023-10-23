@@ -14,7 +14,7 @@ class DomDashboard(dom.Dom):
     def __init__(self, depth=20, size=20):
         super().__init__(depth, size)
         self.app = self.create_dash_app()
-        self.order = None
+        self.update = False
 
     def _get_dom_data_table(self, dom_df: pd.DataFrame, page_size: int, order: dom.Dom.Order):
         ask_len = len(self.ask)
@@ -41,27 +41,46 @@ class DomDashboard(dom.Dom):
 
         @app.callback(
             [
-                Output("dom", "children"),
-                Output("order-lock", "children"),
-                Output("play-pause", "children")
+                Output("play-pause", "children"),
+                Output("update", "disabled"),
             ],
             [
-                Input("slider-input", "value"),
-                Input("play-pause", "n_clicks"),
+                Input("play-pause", "n_clicks")
+            ]
+        )
+        def manipulate(n_clicks):
+            if not n_clicks % 2:
+                self.update = False
+                return [
+                    "Play",
+                    True
+                ]
+
+            self.update = True
+            return [
+                "Stop",
+                False
+            ]
+
+        @app.callback(
+            [
+                Output("dom", "children"),
+                Output("order-lock", "children"),
+                Output("update", "interval")
+            ],
+            [
+                Input("dom-page-size", "value"),
                 Input("update", "n_intervals"),
+                Input("intensity", "value")
             ],
         )
-        def update_dom(page_size, n_clicks, n_intervals):
-            played = n_clicks % 2
-            if not played:
-                order = self.order
-            else:
-                order = self.process_order()
+        def update_dom(page_size, n_intervals, intensity):
+            order = self.process_order() if self.update else None
             dom_df = self.common_df()
             return [
                 self._get_dom_data_table(dom_df, page_size, order),
                 self._get_order_lock_data_table(),
-                "Play" if not played else "Stop"
+                (-25 * intensity) // 3 + 1500
             ]
 
         return app
