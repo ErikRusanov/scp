@@ -48,8 +48,9 @@ class Dom:
     def __init__(
             self,
             depth: int = 20,
-            size: int = 5
+            size: int = 20
     ):
+        self.size = size
         self.depth = depth
         self.bid = pd.DataFrame(columns=["price", "orders"])
         self.ask = pd.DataFrame(columns=["price", "orders"])
@@ -77,6 +78,15 @@ class Dom:
                 _ask += f" {order.amount} |"
 
         return "\n\n".join([_bid, _ask])
+
+    def restart(self):
+        self.ask = self.ask.drop(self.ask.index)
+        self.bid = self.bid.drop(self.bid.index)
+        self.order_lock = self.order_lock.drop(self.order_lock.index)
+        self.bba_trace = deque(maxlen=20)
+
+        self._generate_bid(self.size)
+        self._generate_ask(self.size)
 
     @property
     def best_bid(self) -> float:

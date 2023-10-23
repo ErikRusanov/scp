@@ -41,6 +41,10 @@ def dashboard_layout(update_interval: int) -> Component:
                         dmc.Col(
                             dmc.Button(children="Play", id="play-pause", n_clicks=0),
                             span=1
+                        ),
+                        dmc.Col(
+                            dmc.Button(children="Restart", id="restart", n_clicks=0),
+                            span=1
                         )
                     ],
                     mb=32,

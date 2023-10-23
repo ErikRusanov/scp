@@ -16,6 +16,7 @@ class DomDashboard(dom.Dom):
         super().__init__(depth, size)
         self.app = self.create_dash_app()
         self.update = False
+        self.restart_clicks = -1
 
     def _get_dom_data_table(self, dom_df: pd.DataFrame, page_size: int, order: dom.Dom.Order):
         ask_len = len(self.ask)
@@ -101,11 +102,17 @@ class DomDashboard(dom.Dom):
             [
                 Input("dom-page-size", "value"),
                 Input("update", "n_intervals"),
-                Input("intensity", "value")
+                Input("intensity", "value"),
+                Input("restart", "n_clicks")
             ],
         )
-        def update_dom(page_size, n_intervals, intensity):
-            order = self.process_order() if self.update else None
+        def update_dom(page_size, n_intervals, intensity, restart_clicks):
+            if restart_clicks > self.restart_clicks:
+                self.restart_clicks = restart_clicks
+                self.restart()
+                order = None
+            else:
+                order = self.process_order() if self.update else None
             dom_df = self.common_df()
 
             return [
